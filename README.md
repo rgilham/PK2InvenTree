@@ -8,7 +8,7 @@ PK2InvenTree is a open-source tool to enable database migration from [Partkeepr]
 I coded it to ease my migration and have released it as others might find it useful. It is coded in python and uses the InvenTree python module and the PartKeepr API.
 The intentions was to recreate my the component categories and part in InvenTree
 
-I have been using PartKeepr for a number of years at my development company, [Inventech] (https://www.invnentech.co.za) but have found it limited in the
+I have been using PartKeepr for a number of years at my development company, [Inventech](https://www.invnentech.co.za) but have found it limited in the
 ability to import KiCAD boms and manage my inventry of standard stock items. I have written some tools that integrate KiCAD with PartKeepr - added later and I wanting to
 trial InvenTree
 
