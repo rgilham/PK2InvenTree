@@ -9,19 +9,23 @@ MY_PASSWORD = 'password'
 
 api = InvenTreeAPI(SERVER_ADDRESS, username=MY_USERNAME, password=MY_PASSWORD)
 
+#delete all the exisiting parts
+
 itparts = Part.list(api)
 for p in itparts:
     print("delete p ",p.name)
+    p._data['active'] = False
+    p.save()
     p.delete()
 
+#delete all of the exisitng categories
+
+cat = PartCategory.list(api)
 
 
-# cat = PartCategory.list(api)
-# print(len(cat))
-#
-# for c in cat:
-#     print("delete c ",c.name)
-#     c.delete()
+for c in cat:
+    print("delete c ",c.name)
+    c.delete()
 
 
 
