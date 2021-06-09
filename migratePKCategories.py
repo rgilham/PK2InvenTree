@@ -91,7 +91,10 @@ def getorCreateLocation(part):
         for loc in itloca:
             if (loc.name == part.storageLocation):
                 return loc
-        return 0
+        return StockLocation.create(api, {
+            'name': part.storageLocation,
+            'parent': ""
+        })
 
     else:
         #create or return unknownloadtion
