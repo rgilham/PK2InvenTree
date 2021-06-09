@@ -15,6 +15,7 @@ class part(object):
         #print (req["name"])
         self.name = req["name"]
         self.description = req["description"]
+        self.comment = req["comment"]
         self.id = req["@id"][req["@id"].rfind("/")+1:]
         try:
             self.footprint = req["footprint"]["name"]

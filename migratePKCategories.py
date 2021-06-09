@@ -110,6 +110,7 @@ def createITPart(part,ITCat):
     np = Part.create(api, {
         'name' : part.name,
         'description' : part.description,
+        'notes' : part.comment,
         'category' : ITCat.pk,
         'active' : True,
         'virtual' : False,
