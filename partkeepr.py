@@ -8,6 +8,11 @@ api = "/api/parts"
 searchfilter = '?filter={"property":"name","operator":"LIKE","value":"%s%%"}'
 auth=('gilham','gilham')
 
+class attachment(object):
+    def __init__(self, data):
+        self.url = server + data['@id'] + '/getFile'
+        self.filename = data['originalFilename']
+        self.isImage = data['isImage']
 
 class part(object):
     def __init__(self,req):
@@ -53,8 +58,14 @@ class part(object):
         except (TypeError, IndexError):
             self.price = 0
 
-
-
+        self.attachments = []
+        self.image = None
+        for d in req['attachments']:
+            a = attachment(d)
+            if not self.image and a.isImage:
+                self.image = a
+            else:
+                self.attachments.append(a)
 
     def getValues(self):
         return [self.category,self.name,self.description,self.footprint]

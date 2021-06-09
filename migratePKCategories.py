@@ -1,7 +1,10 @@
 import partkeepr
 from inventree.api import InvenTreeAPI
-from inventree.part import PartCategory,Part
+from inventree.part import PartCategory,Part,PartAttachment
 from inventree.stock import StockItem, StockLocation
+import tempfile
+import requests
+import os
 
 SERVER_ADDRESS = 'http://127.0.0.1:8000'
 MY_USERNAME = 'username'
@@ -100,6 +103,21 @@ def getorCreateLocation(part):
             return itloca[0]
         return 0
 
+class DownloadedAttachment:
+    "Context manager for a downloaded attachment with the correct file name"
+
+    def __init__(self, attachment_data):
+        self.path = os.path.join(tempfile.gettempdir(), attachment_data.filename)
+        self.url = attachment_data.url
+
+    def __enter__(self):
+        with requests.get(self.url, auth=partkeepr.auth) as r:
+            open(self.path, 'wb').write(r.content)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        os.unlink(self.path)
+
 def createITPart(part,ITCat):
     print("create part %s cat %s" % (part,ITCat.name))
     if len(part.description)==0:
@@ -112,6 +130,12 @@ def createITPart(part,ITCat):
         'virtual' : False,
         'IPN' : part.IPN
     })
+    if part.image:
+        with DownloadedAttachment(part.image) as file:
+            np.upload_image(file.path)
+    for attachment in part.attachments:
+        with DownloadedAttachment(attachment) as file:
+            PartAttachment.upload_attachment(api, np.pk, attachment=file.path)
     return np
 
 allPKparts=partkeepr.getallParts()
