@@ -5,10 +5,13 @@ from inventree.stock import StockItem, StockLocation
 import tempfile
 import requests
 import os
+from configparser import ConfigParser
 
-SERVER_ADDRESS = 'http://127.0.0.1:8000'
-MY_USERNAME = 'username'
-MY_PASSWORD = 'password'
+config = ConfigParser()
+config.read('config.ini')
+SERVER_ADDRESS = config.get('inventree', 'server_address')
+MY_USERNAME = config.get('inventree', 'user')
+MY_PASSWORD = config.get('inventree', 'password')
 
 api = InvenTreeAPI(SERVER_ADDRESS, username=MY_USERNAME, password=MY_PASSWORD)
 
@@ -17,7 +20,8 @@ api = InvenTreeAPI(SERVER_ADDRESS, username=MY_USERNAME, password=MY_PASSWORD)
 itparts = Part.list(api)
 for p in itparts:
     print("delete p ",p.name)
-    p._data['active'] = False
+    p.__setitem__('active', False)
+    p.__setitem__('image', None)
     p.save()
     p.delete()
 
@@ -136,14 +140,15 @@ def createITPart(part,ITCat):
     })
     if part.image:
         with DownloadedAttachment(part.image) as file:
-            np.upload_image(file.path)
+            np.uploadImage(file.path)
     for attachment in part.attachments:
         with DownloadedAttachment(attachment) as file:
-            PartAttachment.upload_attachment(api, np.pk, attachment=file.path)
+            np.uploadAttachment(attachment=file.path)
     return np
 
 allPKparts=partkeepr.getallParts()
 
+print(allPKparts)
 for pkpart in allPKparts:
     catpath = pkpart.categoryPath[1:]
     root = None

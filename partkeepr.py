@@ -2,11 +2,16 @@
 import requests
 import json
 import pprint
+from configparser import ConfigParser
 
-server = "http://partkeepr.inventech.co.za"
+config = ConfigParser()
+config.read('config.ini')
+server = config.get('partkeepr', 'server_address')
+auth = (config.get('partkeepr', 'user'), config.get('partkeepr', 'password'))
+
 api = "/api/parts"
 searchfilter = '?filter={"property":"name","operator":"LIKE","value":"%s%%"}'
-auth=('gilham','gilham')
+
 
 class attachment(object):
     def __init__(self, data):
