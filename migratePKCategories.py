@@ -1,11 +1,17 @@
 import partkeepr
 from inventree.api import InvenTreeAPI
-from inventree.part import PartCategory,Part
+from inventree.part import PartCategory,Part,PartAttachment
 from inventree.stock import StockItem, StockLocation
+import tempfile
+import requests
+import os
+from configparser import ConfigParser
 
-SERVER_ADDRESS = 'http://127.0.0.1:8000'
-MY_USERNAME = 'username'
-MY_PASSWORD = 'password'
+config = ConfigParser()
+config.read('config.ini')
+SERVER_ADDRESS = config.get('inventree', 'server_address')
+MY_USERNAME = config.get('inventree', 'user')
+MY_PASSWORD = config.get('inventree', 'password')
 
 api = InvenTreeAPI(SERVER_ADDRESS, username=MY_USERNAME, password=MY_PASSWORD)
 
@@ -14,7 +20,8 @@ api = InvenTreeAPI(SERVER_ADDRESS, username=MY_USERNAME, password=MY_PASSWORD)
 itparts = Part.list(api)
 for p in itparts:
     print("delete p ",p.name)
-    p._data['active'] = False
+    p.__setitem__('active', False)
+    p.__setitem__('image', None)
     p.save()
     p.delete()
 
@@ -91,7 +98,10 @@ def getorCreateLocation(part):
         for loc in itloca:
             if (loc.name == part.storageLocation):
                 return loc
-        return 0
+        return StockLocation.create(api, {
+            'name': part.storageLocation,
+            'parent': ""
+        })
 
     else:
         #create or return unknownloadtion
@@ -100,6 +110,21 @@ def getorCreateLocation(part):
             return itloca[0]
         return 0
 
+class DownloadedAttachment:
+    "Context manager for a downloaded attachment with the correct file name"
+
+    def __init__(self, attachment_data):
+        self.path = os.path.join(tempfile.gettempdir(), attachment_data.filename)
+        self.url = attachment_data.url
+
+    def __enter__(self):
+        with requests.get(self.url, auth=partkeepr.auth) as r:
+            open(self.path, 'wb').write(r.content)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        os.unlink(self.path)
+
 def createITPart(part,ITCat):
     print("create part %s cat %s" % (part,ITCat.name))
     if len(part.description)==0:
@@ -107,15 +132,23 @@ def createITPart(part,ITCat):
     np = Part.create(api, {
         'name' : part.name,
         'description' : part.description,
+        'notes' : part.comment,
         'category' : ITCat.pk,
         'active' : True,
         'virtual' : False,
         'IPN' : part.IPN
     })
+    if part.image:
+        with DownloadedAttachment(part.image) as file:
+            np.uploadImage(file.path)
+    for attachment in part.attachments:
+        with DownloadedAttachment(attachment) as file:
+            np.uploadAttachment(attachment=file.path)
     return np
 
 allPKparts=partkeepr.getallParts()
 
+print(allPKparts)
 for pkpart in allPKparts:
     catpath = pkpart.categoryPath[1:]
     root = None

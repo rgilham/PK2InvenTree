@@ -2,12 +2,22 @@
 import requests
 import json
 import pprint
+from configparser import ConfigParser
 
-server = "http://partkeepr.inventech.co.za"
+config = ConfigParser()
+config.read('config.ini')
+server = config.get('partkeepr', 'server_address')
+auth = (config.get('partkeepr', 'user'), config.get('partkeepr', 'password'))
+
 api = "/api/parts"
 searchfilter = '?filter={"property":"name","operator":"LIKE","value":"%s%%"}'
-auth=('gilham','gilham')
 
+
+class attachment(object):
+    def __init__(self, data):
+        self.url = server + data['@id'] + '/getFile'
+        self.filename = data['originalFilename']
+        self.isImage = data['isImage']
 
 class part(object):
     def __init__(self,req):
@@ -15,6 +25,7 @@ class part(object):
         #print (req["name"])
         self.name = req["name"]
         self.description = req["description"]
+        self.comment = req["comment"]
         self.id = req["@id"][req["@id"].rfind("/")+1:]
         try:
             self.footprint = req["footprint"]["name"]
@@ -53,8 +64,14 @@ class part(object):
         except (TypeError, IndexError):
             self.price = 0
 
-
-
+        self.attachments = []
+        self.image = None
+        for d in req['attachments']:
+            a = attachment(d)
+            if not self.image and a.isImage:
+                self.image = a
+            else:
+                self.attachments.append(a)
 
     def getValues(self):
         return [self.category,self.name,self.description,self.footprint]
